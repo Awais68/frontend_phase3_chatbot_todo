@@ -985,7 +985,7 @@ export default function Dashboard() {
     // Delete mission (move to trash)
     const handleDeleteMission = useCallback(async (id: string) => {
         try {
-            const userId = session?.user?.id || session?.user?.email || 'anonymous';
+            const userId = session?.user?.email || session?.user?.id || 'anonymous';
 
             // Try to delete from backend
             try {
@@ -1034,7 +1034,7 @@ export default function Dashboard() {
         if (!editingMission) return;
 
         try {
-            const userId = session?.user?.id || session?.user?.email || 'anonymous';
+            const userId = session?.user?.email || session?.user?.id || 'anonymous';
 
             // Try to update in backend
             try {
@@ -1087,7 +1087,7 @@ export default function Dashboard() {
             const mission = missions.find(m => m.id === id);
             if (!mission) return;
 
-            const userId = session?.user?.id || session?.user?.email || 'anonymous';
+            const userId = session?.user?.email || session?.user?.id || 'anonymous';
             const newStatus = mission.status === 'completed' ? 'pending' : 'completed';
 
             // Try to update in backend
@@ -1273,7 +1273,7 @@ export default function Dashboard() {
         if (editingItemMissionId) {
             const missionToUpdate = missions.find(m => m.id === editingItemMissionId);
             if (missionToUpdate) {
-                const userId = session?.user?.id || session?.user?.email || 'anonymous';
+                const userId = session?.user?.email || session?.user?.id || 'anonymous';
 
                 const taskUpdateData = {
                     title: missionToUpdate.title,
@@ -1354,7 +1354,7 @@ export default function Dashboard() {
         // Sync with backend by updating the parent task
         const missionToUpdate = missions.find(m => m.id === missionId);
         if (missionToUpdate) {
-            const userId = session?.user?.id || session?.user?.email || 'anonymous';
+            const userId = session?.user?.email || session?.user?.id || 'anonymous';
 
             const taskUpdateData = {
                 title: missionToUpdate.title,
@@ -1445,7 +1445,7 @@ export default function Dashboard() {
         // Sync with backend by updating the parent task
         const missionToUpdate = missions.find(m => m.id === missionId);
         if (missionToUpdate) {
-            const userId = session?.user?.id || session?.user?.email || 'anonymous';
+            const userId = session?.user?.email || session?.user?.id || 'anonymous';
 
             const taskUpdateData = {
                 title: missionToUpdate.title,
@@ -1537,7 +1537,7 @@ export default function Dashboard() {
         // Sync with backend by updating the parent task
         const missionToUpdate = missions.find(m => m.id === missionId);
         if (missionToUpdate) {
-            const userId = session?.user?.id || session?.user?.email || 'anonymous';
+            const userId = session?.user?.email || session?.user?.id || 'anonymous';
 
             const taskUpdateData = {
                 title: missionToUpdate.title,

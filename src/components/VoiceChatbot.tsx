@@ -32,6 +32,7 @@ import {
 import { useTaskStore } from '@/stores/useTaskStore'
 import { api } from '@/lib/api'
 import { Task } from '@/types'
+import { authClient } from '@/lib/auth-client'
 
 interface VoiceChatbotProps {
   onClose?: () => void
@@ -40,6 +41,8 @@ interface VoiceChatbotProps {
 export default function VoiceChatbot({ onClose }: VoiceChatbotProps) {
   const { t, i18n } = useTranslation()
   const { tasks, addTask, updateTask, deleteTask } = useTaskStore()
+  const { data: session } = authClient.useSession()
+  const userId = session?.user?.email || session?.user?.id
 
   // Language state
   const [language, setLanguage] = useState<'en' | 'ur'>('en')
@@ -211,7 +214,7 @@ export default function VoiceChatbot({ onClose }: VoiceChatbotProps) {
           if (task) {
             const updatedTask = await api.tasks.update(task.id, {
               completed: true,
-            })
+            }, userId)
             updateTask(task.id, updatedTask)
           }
         }
@@ -221,7 +224,7 @@ export default function VoiceChatbot({ onClose }: VoiceChatbotProps) {
         if (command.params.id) {
           const task = findTask(command.params.id)
           if (task) {
-            await api.tasks.delete(task.id)
+            await api.tasks.delete(task.id, userId)
             deleteTask(task.id)
           }
         }
@@ -233,7 +236,7 @@ export default function VoiceChatbot({ onClose }: VoiceChatbotProps) {
           if (task) {
             const updatedTask = await api.tasks.update(task.id, {
               title: command.params.title,
-            })
+            }, userId)
             updateTask(task.id, updatedTask)
           }
         }

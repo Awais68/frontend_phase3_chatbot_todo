@@ -6,6 +6,7 @@ import { useTaskStore } from '@/stores/useTaskStore'
 import { syncManager } from '@/lib/sync'
 import { api } from '@/lib/api'
 import { getDueDateStatus } from '@/utils/dateUtils'
+import { authClient } from '@/lib/auth-client'
 
 /**
  * TaskList Component
@@ -15,6 +16,8 @@ import { getDueDateStatus } from '@/utils/dateUtils'
 export function TaskList() {
   const { tasks, loading } = useTaskStore()
   const { isOffline } = useTaskStore()
+  const { data: session } = authClient.useSession()
+  const userId = session?.user?.email || session?.user?.id
 
   const handleToggleComplete = async (id: string) => {
     const task = tasks.find((t) => t.id === id)
@@ -28,9 +31,10 @@ export function TaskList() {
     } else {
       // Online mode - call API directly
       try {
-        await api.tasks.update(id, updates)
+        await api.tasks.update(id, updates, userId)
         useTaskStore.getState().updateTask(id, updates)
       } catch (error) {
+        console.error('Failed to update task:', error)
         // Fallback to offline if API fails
         await syncManager.updateTaskOffline(id, updates)
       }
@@ -44,9 +48,10 @@ export function TaskList() {
     } else {
       // Online mode - call API directly
       try {
-        await api.tasks.delete(id)
+        await api.tasks.delete(id, userId)
         useTaskStore.getState().deleteTask(id)
       } catch (error) {
+        console.error('Failed to delete task:', error)
         // Fallback to offline if API fails
         await syncManager.deleteTaskOffline(id)
       }
