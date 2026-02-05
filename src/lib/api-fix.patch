@@ -1,0 +1,6 @@
+# Fix: Remove duplicate lines 44-46 in api.ts
+# The sed command created duplicate auth header code
+# Lines to remove:
+#   44:     headers['Authorization'] = `Bearer ${tokens.accessToken}`
+#   45:   }
+#   46:
