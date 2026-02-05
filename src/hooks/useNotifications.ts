@@ -7,20 +7,18 @@ import { useState, useEffect, useCallback } from 'react'
 
 export type NotificationPermissionState = 'default' | 'granted' | 'denied'
 
-interface NotificationOptions {
+interface ExtendedNotificationOptions extends NotificationOptions {
   title: string
   body: string
   icon?: string
   tag?: string
   data?: any
-  requireInteraction?: boolean
-  silent?: boolean
 }
 
 interface ScheduledNotification {
   id: string
   scheduledTime: Date
-  options: NotificationOptions
+  options: ExtendedNotificationOptions
   timeoutId?: NodeJS.Timeout
 }
 
@@ -67,7 +65,7 @@ export const useNotifications = () => {
    * @param options Notification options
    */
   const showNotification = useCallback(
-    async (options: NotificationOptions): Promise<void> => {
+    async (options: ExtendedNotificationOptions): Promise<void> => {
       if (!isSupported) {
         console.warn('Notifications are not supported')
         return
@@ -97,7 +95,7 @@ export const useNotifications = () => {
             requireInteraction: options.requireInteraction,
             silent: options.silent,
             vibrate: [200, 100, 200],
-          })
+          } as NotificationOptions)
         } else {
           // Fallback to regular notification
           new Notification(options.title, {
@@ -107,7 +105,8 @@ export const useNotifications = () => {
             data: options.data,
             requireInteraction: options.requireInteraction,
             silent: options.silent,
-          })
+            vibrate: [200, 100, 200], // Add vibrate to the regular notification too
+          } as NotificationOptions)
         }
       } catch (error) {
         console.error('Error showing notification:', error)
@@ -123,7 +122,7 @@ export const useNotifications = () => {
    * @param options Notification options
    */
   const scheduleNotification = useCallback(
-    (id: string, scheduledTime: Date, options: NotificationOptions): void => {
+    (id: string, scheduledTime: Date, options: ExtendedNotificationOptions): void => {
       if (!isSupported) {
         console.warn('Notifications are not supported')
         return
