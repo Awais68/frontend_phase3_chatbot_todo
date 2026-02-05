@@ -267,7 +267,22 @@ export const api = {
   },
 
   chat: {
-    send: async (conversationId: string | null, message: string, userId: string = '1') => {
+    send: async (
+      conversationId: string | null,
+      message: string,
+      userId: string = '1',
+      dueDateText?: string
+    ) => {
+      const payload: any = {
+        conversation_id: conversationId,
+        message: message,
+      };
+
+      // Add due_date_text if provided
+      if (dueDateText) {
+        payload.due_date_text = dueDateText;
+      }
+
       return fetchApi<{
         conversation_id: string;
         message: string;
@@ -275,10 +290,7 @@ export const api = {
         tool_calls?: any[];
       }>(`/api/${userId}/chat`, {
         method: 'POST',
-        body: JSON.stringify({
-          conversation_id: conversationId,
-          message: message,
-        }),
+        body: JSON.stringify(payload),
       })
     },
 
