@@ -160,40 +160,49 @@ export const syncManager = {
 
   /**
    * Load tasks from IndexedDB on app start
-   * Falls back to API if online
+   * Prioritizes IndexedDB, then tries API in background
    */
   async loadTasks(): Promise<void> {
-    const { setTasks, setLoading, setError, setOffline } = useTaskStore.getState()
+    const { setTasks, setLoading, setOffline } = useTaskStore.getState()
 
     try {
       setLoading(true)
 
-      // Try to load from API first (online)
-      try {
-        const tasks = await api.tasks.list()
-        setTasks(tasks)
+      // Load from IndexedDB first (instant, works offline)
+      const cachedTasks = await taskDB.getAll()
+      setTasks(cachedTasks)
+      setLoading(false)
 
-        // Update IndexedDB cache
-        await taskDB.bulkPut(tasks)
-
-        setOffline(false)
-      } catch (apiError) {
-        console.error('API load failed, falling back to IndexedDB:', apiError)
-        // Fallback to IndexedDB (offline)
+      // Try to sync with API in background (don't block UI)
+      if (navigator.onLine) {
         try {
-          const tasks = await taskDB.getAll()
+          // Add timeout to API call to detect backend availability quickly
+          const controller = new AbortController()
+          const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+
+          const tasks = await api.tasks.list()
+          clearTimeout(timeoutId)
+
+          // Backend is available and responded successfully
           setTasks(tasks)
-          setOffline(true)
-        } catch (dbError) {
-          console.error('IndexedDB fallback failed:', dbError)
-          setTasks([]) // Set empty tasks as fallback
-          setOffline(true)
+          await taskDB.bulkPut(tasks) // Update cache
+          setOffline(false) // We're online!
+
+          console.log('✅ Backend online - using live data')
+        } catch (apiError) {
+          // API failed but we already have cached data
+          console.log('⚠️ Backend unavailable - using cached data')
+          setOffline(true) // Mark as offline
         }
+      } else {
+        // Browser reports no network connection
+        console.log('📡 No network - using cached data')
+        setOffline(true)
       }
     } catch (error) {
-      console.error('Failed to load tasks:', error)
-      setError('Failed to load tasks')
-    } finally {
+      console.error('Failed to load tasks from IndexedDB:', error)
+      setTasks([]) // Start with empty tasks
+      setOffline(true)
       setLoading(false)
     }
   },

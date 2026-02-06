@@ -325,6 +325,29 @@ export const api = {
     },
   },
 
+  history: {
+    list: async (options?: {
+      userId?: string;
+      actionType?: string;
+      page?: number;
+      pageSize?: number;
+    }) => {
+      const params = new URLSearchParams();
+      if (options?.userId) params.append('user_id', options.userId);
+      if (options?.actionType) params.append('action_type', options.actionType);
+      if (options?.page) params.append('page', options.page.toString());
+      if (options?.pageSize) params.append('page_size', options.pageSize.toString());
+      
+      return fetchApi<{
+        items: any[];
+        total: number;
+        page: number;
+        page_size: number;
+        total_pages: number;
+      }>(`/api/history/?${params.toString()}`);
+    },
+  },
+
   recurring: {
     list: async (userId?: string) => {
       const effectiveUserId = userId || '1'; // Use '1' as default demo user

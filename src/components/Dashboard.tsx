@@ -30,6 +30,8 @@ import {
     LogOut,
     MessageSquare,
     Repeat,
+    History,
+    Bell,
 } from 'lucide-react';
 import VoiceCommandButton from './VoiceCommandButton';
 import ParticlesBackground from './ParticlesBackground';
@@ -37,6 +39,12 @@ import ChatTab from './ChatTab';
 import RecursionTab from './RecursionTab';
 import { api } from '@/lib/api';
 import { useSession, signOut } from '@/lib/auth-client';
+
+// Helper function to get consistent userId
+const getUserId = (session: any): string => {
+  // Always prioritize email for consistency across all operations
+  return session?.user?.email || session?.user?.id || 'anonymous';
+};
 
 // Types
 interface Item {
@@ -777,9 +785,9 @@ export default function Dashboard() {
                     }
                 }
 
-                const userId = session?.user?.email || session?.user?.id;
+                const userId = getUserId(session);
 
-                if (!userId) {
+                if (!userId || userId === 'anonymous') {
                     console.error('No userId found in session');
                     // Show empty missions if no user ID found
                     setMissions([]);
@@ -878,6 +886,7 @@ export default function Dashboard() {
         { id: 'pending', label: 'Pending', icon: <AlertTriangle className="w-5 h-5" />, count: stats.pending },
         { id: 'completed', label: 'Completed', icon: <CheckCircle className="w-5 h-5" />, count: stats.completed },
         { id: 'starred', label: 'Priority', icon: <Star className="w-5 h-5" />, count: missions.filter(m => m.priority === 'critical' || m.priority === 'high').length },
+        { id: 'history', label: 'History', icon: <History className="w-5 h-5" />, count: 0 },
         { id: 'recursion', label: 'Recursion', icon: <Repeat className="w-5 h-5" />, count: 0 },
         { id: 'chatbot', label: 'AI Assistant', icon: <MessageSquare className="w-5 h-5" />, count: 0 },
     ];
@@ -910,7 +919,7 @@ export default function Dashboard() {
     const handleAddMission = useCallback(async (missionData: Omit<Mission, 'id' | 'createdAt'>) => {
         try {
             // Get user info from session
-            const userId = session?.user?.email || session?.user?.id || 'anonymous';
+            const userId = getUserId(session);
             const userEmail = session?.user?.email;
             const userName = session?.user?.name;
 
@@ -985,7 +994,7 @@ export default function Dashboard() {
     // Delete mission (move to trash)
     const handleDeleteMission = useCallback(async (id: string) => {
         try {
-            const userId = session?.user?.email || session?.user?.id || 'anonymous';
+            const userId = getUserId(session);
 
             // Try to delete from backend
             try {
@@ -1034,7 +1043,7 @@ export default function Dashboard() {
         if (!editingMission) return;
 
         try {
-            const userId = session?.user?.email || session?.user?.id || 'anonymous';
+            const userId = getUserId(session);
 
             // Try to update in backend
             try {
@@ -1087,7 +1096,7 @@ export default function Dashboard() {
             const mission = missions.find(m => m.id === id);
             if (!mission) return;
 
-            const userId = session?.user?.email || session?.user?.id || 'anonymous';
+            const userId = getUserId(session);
             const newStatus = mission.status === 'completed' ? 'pending' : 'completed';
 
             // Try to update in backend
@@ -1273,7 +1282,7 @@ export default function Dashboard() {
         if (editingItemMissionId) {
             const missionToUpdate = missions.find(m => m.id === editingItemMissionId);
             if (missionToUpdate) {
-                const userId = session?.user?.email || session?.user?.id || 'anonymous';
+                const userId = getUserId(session);
 
                 const taskUpdateData = {
                     title: missionToUpdate.title,
@@ -1354,7 +1363,7 @@ export default function Dashboard() {
         // Sync with backend by updating the parent task
         const missionToUpdate = missions.find(m => m.id === missionId);
         if (missionToUpdate) {
-            const userId = session?.user?.email || session?.user?.id || 'anonymous';
+            const userId = getUserId(session);
 
             const taskUpdateData = {
                 title: missionToUpdate.title,
@@ -1445,7 +1454,7 @@ export default function Dashboard() {
         // Sync with backend by updating the parent task
         const missionToUpdate = missions.find(m => m.id === missionId);
         if (missionToUpdate) {
-            const userId = session?.user?.email || session?.user?.id || 'anonymous';
+            const userId = getUserId(session);
 
             const taskUpdateData = {
                 title: missionToUpdate.title,
@@ -1537,7 +1546,7 @@ export default function Dashboard() {
         // Sync with backend by updating the parent task
         const missionToUpdate = missions.find(m => m.id === missionId);
         if (missionToUpdate) {
-            const userId = session?.user?.email || session?.user?.id || 'anonymous';
+            const userId = getUserId(session);
 
             const taskUpdateData = {
                 title: missionToUpdate.title,
@@ -1710,6 +1719,17 @@ export default function Dashboard() {
                     >
                         <Menu className="w-6 h-6" />
                     </button>
+                    <h1 className={`text-lg font-bold ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>
+                        Mission Control
+                    </h1>
+                    <button
+                        onClick={() => {/* Notifications handler */}}
+                        className={`relative p-2 rounded-lg ${isDark ? 'text-cyan-400 hover:bg-gray-800' : 'text-cyan-600 hover:bg-gray-100'}`}
+                    >
+                        <Bell className="w-5 h-5" />
+                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                    </button>
+                </div>
                     <h1 className={`text-lg font-bold ${isDark ? 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500' : 'text-cyan-600'}`}>
                         <Target className="inline w-5 h-5 mr-2" />
                         Mission Control
@@ -2047,11 +2067,11 @@ export default function Dashboard() {
                         {activeTab === 'chatbot' ? (
                             <div className="h-[calc(100vh-12rem)]">
                                 <ChatTab
-                                    userId={session?.user?.email || session?.user?.id || ''}
+                                    userId={getUserId(session)}
                                     isDark={isDark}
                                     onTasksUpdated={async () => {
                                         try {
-                                            const userId = session?.user?.email || session?.user?.id;
+                                            const userId = getUserId(session);
                                             const userEmail = session?.user?.email;
                                             const userName = session?.user?.name;
                                             if (userId) {
