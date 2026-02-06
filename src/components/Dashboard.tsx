@@ -1730,19 +1730,6 @@ export default function Dashboard() {
                         <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                     </button>
                 </div>
-                    <h1 className={`text-lg font-bold ${isDark ? 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500' : 'text-cyan-600'}`}>
-                        <Target className="inline w-5 h-5 mr-2" />
-                        Mission Control
-                    </h1>
-                    {session?.user?.image ? (
-                        <img src={session.user.image} alt="Profile" className="w-8 h-8 rounded-full border-2 border-cyan-500 object-cover" />
-                    ) : (
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm
-                            ${isDark ? 'bg-gradient-to-br from-cyan-500 to-blue-600' : 'bg-gradient-to-br from-cyan-400 to-blue-500'}`}>
-                            {session?.user?.name?.[0]?.toUpperCase() || session?.user?.email?.[0]?.toUpperCase() || '?'}
-                        </div>
-                    )}
-                </div>
 
                 {/* Mobile Overlay */}
                 {sidebarOpen && (
@@ -2581,38 +2568,33 @@ export default function Dashboard() {
                 </main>
             </div>
 
-
             {/* Add Mission Modal */}
             <AnimatePresence>
-                {
-                    showAddModal && (
-                        <AddMissionModal
-                            isOpen={showAddModal}
-                            onClose={() => setShowAddModal(false)}
-                            onAdd={handleAddMission}
-                            isDark={isDark}
-                        />
-                    )
-                }
-                {
-                    showEditModal && editingMission && (
-                        <AddMissionModal
-                            isOpen={showEditModal}
-                            onClose={() => {
-                                setShowEditModal(false);
-                                setEditingMission(null);
-                            }}
-                            onAdd={handleSaveEdit}
-                            isDark={isDark}
-                            initialData={editingMission}
-                            isEditMode={true}
-                        />
-                    )
-                }
-            </AnimatePresence >
+                {showAddModal && (
+                    <AddMissionModal
+                        isOpen={showAddModal}
+                        onClose={() => setShowAddModal(false)}
+                        onAdd={handleAddMission}
+                        isDark={isDark}
+                    />
+                )}
+                {showEditModal && editingMission && (
+                    <AddMissionModal
+                        isOpen={showEditModal}
+                        onClose={() => {
+                            setShowEditModal(false);
+                            setEditingMission(null);
+                        }}
+                        onAdd={handleSaveEdit}
+                        isDark={isDark}
+                        initialData={editingMission}
+                        isEditMode={true}
+                    />
+                )}
+            </AnimatePresence>
 
-        {/* Add Item to Shopping List Modal */}
-        <AnimatePresence>
+            {/* Add Item to Shopping List Modal */}
+            <AnimatePresence>
             {showShoppingList && (
                 <motion.div
                     initial={{ opacity: 0 }}
