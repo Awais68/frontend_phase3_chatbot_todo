@@ -157,6 +157,7 @@ export const api = {
       recursion?: string;
       category?: string;
       tags?: string[];
+      shopping_list?: any[];
       userId?: string;
       userEmail?: string;
       userName?: string;
@@ -177,7 +178,8 @@ export const api = {
           due_date: data.dueDate,
           recursion: data.recursion,
           category: data.category,
-          tags: data.tags
+          tags: data.tags,
+          shopping_list: data.shopping_list || []
         }),
       })
     },
@@ -197,16 +199,15 @@ export const api = {
       recursion?: string;
       category?: string;
       tags?: string[];
-      [key: string]: any; // Allow additional properties like shoppingList
+      shoppingList?: any[];
+      [key: string]: any; // Allow additional properties
     }, userId?: string) => {
       const params = userId ? `?user_id=${encodeURIComponent(userId)}` : ''
       // Filter out undefined values but keep falsy values like false/empty strings
-      // Also exclude frontend-specific fields that aren't supported by backend
-      const excludedFields = ['shoppingList']; // Add other frontend-only fields here
       const payload: any = {};
 
       Object.keys(data).forEach(key => {
-        if (data[key] !== undefined && !excludedFields.includes(key)) {
+        if (data[key] !== undefined) {
           // Convert camelCase to snake_case for backend compatibility
           const snakeCaseKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
           payload[snakeCaseKey] = data[key];

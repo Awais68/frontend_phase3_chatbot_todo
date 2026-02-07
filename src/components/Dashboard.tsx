@@ -813,7 +813,8 @@ export default function Dashboard() {
                         createdAt: task.createdAt,
                         tags: task.tags || [],
                         category: task.category || 'General',
-                        recursion: task.recursion
+                        recursion: task.recursion,
+                        shoppingList: task.shopping_list || task.shoppingList || []
                     }));
                     setMissions(mappedTasks);
                 } catch (apiError) {
@@ -934,6 +935,7 @@ export default function Dashboard() {
                     recursion: missionData.recursion,
                     category: missionData.category,
                     tags: missionData.tags,
+                    shopping_list: missionData.shoppingList || [],
                     userId: userId,
                     userEmail: userEmail,
                     userName: userName
@@ -1278,31 +1280,35 @@ export default function Dashboard() {
             });
         }
 
-        // Attempt to save to backend by updating the parent task
+        // Save to backend by updating the parent task with updated shopping list
         if (editingItemMissionId) {
-            const missionToUpdate = missions.find(m => m.id === editingItemMissionId);
-            if (missionToUpdate) {
-                const userId = getUserId(session);
+            setMissions(prevMissions => {
+                const missionToUpdate = prevMissions.find(m => m.id === editingItemMissionId);
+                if (missionToUpdate) {
+                    const userId = getUserId(session);
 
-                const taskUpdateData = {
-                    title: missionToUpdate.title,
-                    description: missionToUpdate.description || '',
-                    status: missionToUpdate.status,
-                    priority: missionToUpdate.priority,
-                    dueDate: missionToUpdate.dueDate,
-                    recursion: missionToUpdate.recursion,
-                    category: missionToUpdate.category,
-                    tags: missionToUpdate.tags || [],
-                    shoppingList: [...(missionToUpdate.shoppingList || [])], // This will include the new/updated item
-                };
+                    const taskUpdateData = {
+                        title: missionToUpdate.title,
+                        description: missionToUpdate.description || '',
+                        status: missionToUpdate.status,
+                        priority: missionToUpdate.priority,
+                        dueDate: missionToUpdate.dueDate,
+                        recursion: missionToUpdate.recursion,
+                        category: missionToUpdate.category,
+                        tags: missionToUpdate.tags || [],
+                        shoppingList: missionToUpdate.shoppingList || [], // Use updated shopping list
+                    };
 
-                api.tasks.update(editingItemMissionId, taskUpdateData, userId)
-                    .catch(error => {
-                        console.error('Failed to save sub-item to backend:', error);
-                        // Optionally show an error message to the user
-                        // alert('Failed to save sub-item to database. Changes are saved locally.');
-                    });
-            }
+                    api.tasks.update(editingItemMissionId, taskUpdateData, userId)
+                        .then(() => {
+                            console.log('✅ Sub-item saved to database');
+                        })
+                        .catch(error => {
+                            console.error('❌ Failed to save sub-item to backend:', error);
+                        });
+                }
+                return prevMissions;
+            });
         }
 
         // Reset form
@@ -1360,30 +1366,34 @@ export default function Dashboard() {
             });
         }
 
-        // Sync with backend by updating the parent task
-        const missionToUpdate = missions.find(m => m.id === missionId);
-        if (missionToUpdate) {
-            const userId = getUserId(session);
+        // Sync with backend by updating the parent task with updated shopping list
+        setMissions(prevMissions => {
+            const missionToUpdate = prevMissions.find(m => m.id === missionId);
+            if (missionToUpdate) {
+                const userId = getUserId(session);
 
-            const taskUpdateData = {
-                title: missionToUpdate.title,
-                description: missionToUpdate.description || '',
-                status: missionToUpdate.status,
-                priority: missionToUpdate.priority,
-                dueDate: missionToUpdate.dueDate,
-                recursion: missionToUpdate.recursion,
-                category: missionToUpdate.category,
-                tags: missionToUpdate.tags || [],
-                shoppingList: [...(missionToUpdate.shoppingList || [])], // This will exclude the deleted item
-            };
+                const taskUpdateData = {
+                    title: missionToUpdate.title,
+                    description: missionToUpdate.description || '',
+                    status: missionToUpdate.status,
+                    priority: missionToUpdate.priority,
+                    dueDate: missionToUpdate.dueDate,
+                    recursion: missionToUpdate.recursion,
+                    category: missionToUpdate.category,
+                    tags: missionToUpdate.tags || [],
+                    shoppingList: missionToUpdate.shoppingList || [], // Use updated shopping list (item removed)
+                };
 
-            api.tasks.update(missionId, taskUpdateData, userId)
-                .catch(error => {
-                    console.error('Failed to save sub-item deletion to backend:', error);
-                    // Optionally show an error message to the user
-                    // alert('Failed to save sub-item deletion to database. Changes are saved locally.');
-                });
-        }
+                api.tasks.update(missionId, taskUpdateData, userId)
+                    .then(() => {
+                        console.log('✅ Sub-item deletion saved to database');
+                    })
+                    .catch(error => {
+                        console.error('❌ Failed to save sub-item deletion to backend:', error);
+                    });
+            }
+            return prevMissions;
+        });
     };
 
     // Calculate total cost for a category
@@ -1451,30 +1461,34 @@ export default function Dashboard() {
             });
         }
 
-        // Sync with backend by updating the parent task
-        const missionToUpdate = missions.find(m => m.id === missionId);
-        if (missionToUpdate) {
-            const userId = getUserId(session);
+        // Sync with backend by updating the parent task with updated shopping list
+        setMissions(prevMissions => {
+            const missionToUpdate = prevMissions.find(m => m.id === missionId);
+            if (missionToUpdate) {
+                const userId = getUserId(session);
 
-            const taskUpdateData = {
-                title: missionToUpdate.title,
-                description: missionToUpdate.description || '',
-                status: missionToUpdate.status,
-                priority: missionToUpdate.priority,
-                dueDate: missionToUpdate.dueDate,
-                recursion: missionToUpdate.recursion,
-                category: missionToUpdate.category,
-                tags: missionToUpdate.tags || [],
-                shoppingList: [...(missionToUpdate.shoppingList || [])], // This will include the edited item
-            };
+                const taskUpdateData = {
+                    title: missionToUpdate.title,
+                    description: missionToUpdate.description || '',
+                    status: missionToUpdate.status,
+                    priority: missionToUpdate.priority,
+                    dueDate: missionToUpdate.dueDate,
+                    recursion: missionToUpdate.recursion,
+                    category: missionToUpdate.category,
+                    tags: missionToUpdate.tags || [],
+                    shoppingList: missionToUpdate.shoppingList || [], // Use updated shopping list (item edited)
+                };
 
-            api.tasks.update(missionId, taskUpdateData, userId)
-                .catch(error => {
-                    console.error('Failed to save sub-item edit to backend:', error);
-                    // Optionally show an error message to the user
-                    // alert('Failed to save sub-item edit to database. Changes are saved locally.');
-                });
-        }
+                api.tasks.update(missionId, taskUpdateData, userId)
+                    .then(() => {
+                        console.log('✅ Sub-item edit saved to database');
+                    })
+                    .catch(error => {
+                        console.error('❌ Failed to save sub-item edit to backend:', error);
+                    });
+            }
+            return prevMissions;
+        });
     };
 
     // Toggle item completion status
@@ -1543,30 +1557,34 @@ export default function Dashboard() {
             });
         }
 
-        // Sync with backend by updating the parent task
-        const missionToUpdate = missions.find(m => m.id === missionId);
-        if (missionToUpdate) {
-            const userId = getUserId(session);
+        // Sync with backend by updating the parent task with updated shopping list
+        setMissions(prevMissions => {
+            const missionToUpdate = prevMissions.find(m => m.id === missionId);
+            if (missionToUpdate) {
+                const userId = getUserId(session);
 
-            const taskUpdateData = {
-                title: missionToUpdate.title,
-                description: missionToUpdate.description || '',
-                status: missionToUpdate.status,
-                priority: missionToUpdate.priority,
-                dueDate: missionToUpdate.dueDate,
-                recursion: missionToUpdate.recursion,
-                category: missionToUpdate.category,
-                tags: missionToUpdate.tags || [],
-                shoppingList: [...(missionToUpdate.shoppingList || [])], // This will include the updated completion status
-            };
+                const taskUpdateData = {
+                    title: missionToUpdate.title,
+                    description: missionToUpdate.description || '',
+                    status: missionToUpdate.status,
+                    priority: missionToUpdate.priority,
+                    dueDate: missionToUpdate.dueDate,
+                    recursion: missionToUpdate.recursion,
+                    category: missionToUpdate.category,
+                    tags: missionToUpdate.tags || [],
+                    shoppingList: missionToUpdate.shoppingList || [], // Use updated shopping list (item toggled)
+                };
 
-            api.tasks.update(missionId, taskUpdateData, userId)
-                .catch(error => {
-                    console.error('Failed to save sub-item completion to backend:', error);
-                    // Optionally show an error message to the user
-                    // alert('Failed to save sub-item completion to database. Changes are saved locally.');
-                });
-        }
+                api.tasks.update(missionId, taskUpdateData, userId)
+                    .then(() => {
+                        console.log('✅ Sub-item completion status saved to database');
+                    })
+                    .catch(error => {
+                        console.error('❌ Failed to save sub-item completion to backend:', error);
+                    });
+            }
+            return prevMissions;
+        });
     };
 
     // Voice command handler - FIXED to properly add tasks
@@ -1870,6 +1888,23 @@ export default function Dashboard() {
 
                             {/* Actions */}
                             <div className="flex items-center gap-3">
+                                {/* Notifications Bell Icon */}
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => {
+                                        // TODO: Add notification panel logic
+                                        alert('Notifications feature - coming soon!')
+                                    }}
+                                    className={`relative p-3 rounded-lg transition-all ${isDark ? 'bg-gray-800 text-gray-400 hover:text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                >
+                                    <Bell className="w-5 h-5" />
+                                    {/* Notification badge - example for unread count */}
+                                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                                        3
+                                    </span>
+                                </motion.button>
+
                                 {/* Theme Toggle */}
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
