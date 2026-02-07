@@ -996,9 +996,21 @@ export default function Dashboard() {
     // Delete mission (move to trash)
     const handleDeleteMission = useCallback(async (id: string) => {
         try {
+            // Check if this is a local-only task (never saved to backend)
+            const isLocalOnly = id.startsWith('local-');
+
+            if (isLocalOnly) {
+                // For local-only tasks, just remove from state
+                setMissions(prev => prev.filter(m => m.id !== id));
+                if (selectedMission && selectedMission.id === id) {
+                    setSelectedMission(null);
+                }
+                return;
+            }
+
             const userId = getUserId(session);
 
-            // Try to delete from backend
+            // Try to delete from backend (only for server-synced tasks)
             try {
                 await api.tasks.delete(id, userId);
 
@@ -1045,9 +1057,24 @@ export default function Dashboard() {
         if (!editingMission) return;
 
         try {
+            // Check if this is a local-only task
+            const isLocalOnly = editingMission.id.startsWith('local-');
+
+            if (isLocalOnly) {
+                // For local-only tasks, just update state
+                setMissions(prev => prev.map(m =>
+                    m.id === editingMission.id
+                        ? { ...m, ...updatedMission }
+                        : m
+                ));
+                setShowEditModal(false);
+                setEditingMission(null);
+                return;
+            }
+
             const userId = getUserId(session);
 
-            // Try to update in backend
+            // Try to update in backend (only for server-synced tasks)
             try {
                 // Ensure all required fields are present
                 const taskUpdateData = {
@@ -1098,10 +1125,22 @@ export default function Dashboard() {
             const mission = missions.find(m => m.id === id);
             if (!mission) return;
 
-            const userId = getUserId(session);
             const newStatus = mission.status === 'completed' ? 'pending' : 'completed';
+            const isLocalOnly = id.startsWith('local-');
 
-            // Try to update in backend
+            if (isLocalOnly) {
+                // For local-only tasks, just update state
+                setMissions(prev => prev.map(m =>
+                    m.id === id
+                        ? { ...m, status: newStatus }
+                        : m
+                ));
+                return;
+            }
+
+            const userId = getUserId(session);
+
+            // Try to update in backend (only for server-synced tasks)
             try {
                 // Ensure all required fields are sent to prevent validation errors
                 const taskUpdateData = {
