@@ -3,10 +3,18 @@ import { useAuthStore } from '@/stores/useAuthStore'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
+// Retry configuration
+const MAX_RETRIES = 3
+const RETRY_DELAY = 1000 // 1 second
+
+// Helper function to delay execution
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
 async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {},
-  requiresAuth: boolean = false
+  requiresAuth: boolean = false,
+  retryCount: number = 0
 ): Promise<T> {
   const { tokens } = useAuthStore.getState()
 
@@ -26,12 +34,18 @@ async function fetchApi<T>(
   const url = `${API_BASE_URL}${endpoint}`
 
   try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+
     const response = await fetch(url, {
       ...options,
       headers,
       mode: 'cors',
       credentials: 'omit',
+      signal: controller.signal,
     })
+
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({
@@ -48,6 +62,13 @@ async function fetchApi<T>(
         useAuthStore.getState().logout()
       }
 
+      // Retry on server errors (5xx) but not client errors (4xx)
+      if (response.status >= 500 && retryCount < MAX_RETRIES) {
+        console.log(`Server error, retrying... (${retryCount + 1}/${MAX_RETRIES})`)
+        await delay(RETRY_DELAY * (retryCount + 1))
+        return fetchApi<T>(endpoint, options, requiresAuth, retryCount + 1)
+      }
+
       throw error
     }
 
@@ -57,16 +78,38 @@ async function fetchApi<T>(
 
     return await response.json()
   } catch (error) {
-    console.error(`API call failed: ${url}`, error);
-
-    if (error instanceof TypeError && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError'))) {
+    // Handle abort/timeout
+    if (error instanceof Error && error.name === 'AbortError') {
+      if (retryCount < MAX_RETRIES) {
+        console.log(`Request timeout, retrying... (${retryCount + 1}/${MAX_RETRIES})`)
+        await delay(RETRY_DELAY * (retryCount + 1))
+        return fetchApi<T>(endpoint, options, requiresAuth, retryCount + 1)
+      }
       throw {
-        message: 'Network error - please check your connection and backend is running',
+        message: 'Request timed out',
+        code: 'TIMEOUT_ERROR',
+      } as ApiError
+    }
+
+    // Handle network errors with retry
+    if (error instanceof TypeError && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError'))) {
+      if (retryCount < MAX_RETRIES) {
+        console.log(`Network error, retrying... (${retryCount + 1}/${MAX_RETRIES})`)
+        await delay(RETRY_DELAY * (retryCount + 1))
+        return fetchApi<T>(endpoint, options, requiresAuth, retryCount + 1)
+      }
+      throw {
+        message: 'Network error - please check your connection',
         code: 'NETWORK_ERROR',
       } as ApiError
     }
 
     if (error instanceof TypeError) {
+      if (retryCount < MAX_RETRIES) {
+        console.log(`Connection error, retrying... (${retryCount + 1}/${MAX_RETRIES})`)
+        await delay(RETRY_DELAY * (retryCount + 1))
+        return fetchApi<T>(endpoint, options, requiresAuth, retryCount + 1)
+      }
       throw {
         message: `Connection error: ${error.message}`,
         code: 'CONNECTION_ERROR',

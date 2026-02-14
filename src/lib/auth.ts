@@ -63,6 +63,12 @@ export const auth = betterAuth({
         "http://localhost:3002",
         "http://localhost:3003",
         "http://localhost:3004",
+        "http://192.168.100.7:3000", // Local network IP
+        "http://192.168.100.7:3001",
+        "http://192.168.100.7:3002",
+        "http://192.168.100.7:3003",
+        "http://192.168.100.7:3004",
+        "http://192.168.100.7:3005",
         "https://todo-frontend.vercel.app", // Updated to match actual deployment URL
         "https://*.vercel.app",
         process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
